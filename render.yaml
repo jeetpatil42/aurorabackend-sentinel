@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: aurora-backend
+    env: node
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_ACCESS_EXPIRY
+        value: 15m
+      - key: JWT_REFRESH_EXPIRY
+        value: 7d
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: Aurora Sentinel <onboarding@resend.dev>
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PRESENTATION_MODE_PASSWORD
+        sync: false
+      - key: MAPBOX_TOKEN
+        sync: false
+      - key: MAX_FILE_SIZE
+        value: 5242880
