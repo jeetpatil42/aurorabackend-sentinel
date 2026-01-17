@@ -1,1 +1,0 @@
-{"version":3,"file":"handlers.d.ts","sourceRoot":"","sources":["../../src/sockets/handlers.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,EAAE,MAAM,WAAW,CAAC;AAM3C,MAAM,WAAW,mBAAoB,SAAQ,MAAM;IACjD,MAAM,CAAC,EAAE,MAAM,CAAC;IAChB,QAAQ,CAAC,EAAE,MAAM,CAAC;CACnB;AAED,wBAAgB,mBAAmB,CAAC,EAAE,EAAE,MAAM,GAAG,IAAI,CA8OpD"}
