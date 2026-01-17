@@ -650,8 +650,15 @@ export const uploadSOSAttachments = async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    const bucket = env.supabaseStorageBucket();
-    if (!bucket) {
+    const envBucket = env.supabaseStorageBucket();
+    const bucketCandidates = Array.from(
+      new Set([
+        envBucket,
+        'sos-attachment',
+        'sos-attachments',
+      ].filter(Boolean))
+    ) as string[];
+    if (bucketCandidates.length === 0) {
       res.status(500).json({ error: 'Supabase storage bucket not configured' });
       return;
     }
@@ -661,6 +668,8 @@ export const uploadSOSAttachments = async (req: AuthRequest, res: Response): Pro
       res.status(400).json({ error: 'No files uploaded' });
       return;
     }
+
+    logger.debug('Uploading SOS attachments', { userId: req.user.id, files: files.length, bucketCandidates });
 
     const uploadedPaths: string[] = [];
 
@@ -675,14 +684,27 @@ export const uploadSOSAttachments = async (req: AuthRequest, res: Response): Pro
         return;
       }
 
-      const { error } = await supabaseAdmin.storage.from(bucket).upload(path, file.buffer, {
-        contentType: file?.mimetype,
-        upsert: false,
-      });
+      let lastError: any = undefined;
+      let uploaded = false;
+      for (const bucketName of bucketCandidates) {
+        const { error } = await supabaseAdmin.storage.from(bucketName).upload(path, file.buffer, {
+          contentType: file?.mimetype,
+          upsert: false,
+        });
+        if (!error) {
+          uploaded = true;
+          break;
+        }
+        lastError = error;
+      }
 
-      if (error) {
-        logger.error('Error uploading SOS attachment:', error);
-        res.status(500).json({ error: error.message || 'Failed to upload attachment' });
+      if (!uploaded) {
+        logger.error('Error uploading SOS attachment:', { bucketCandidates, error: lastError });
+        res.status(500).json({
+          error:
+            (lastError as any)?.message ||
+            'Failed to upload attachment (check SUPABASE_STORAGE_BUCKET and that the bucket exists)',
+        });
         return;
       }
 

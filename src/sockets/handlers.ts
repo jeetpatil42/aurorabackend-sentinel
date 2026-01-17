@@ -3,6 +3,7 @@ import { verifyAccessToken } from '../utils/jwt';
 import { getUserById } from '../services/auth';
 import { supabaseAdmin } from '../db/supabaseAdmin';
 import { logger } from '../config/logger';
+import { calculateMotionIntensity } from '../risk/engine';
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -138,15 +139,43 @@ export function setupSocketHandlers(io: Server): void {
     });
 
     // Handle live feed data (from student devices)
-    socket.on('live_feed', (data: {
-      userId: string;
-      audio: { rms: number; pitch: number; stress: number };
-      motion: { acceleration: number; shake: number };
-      totalRisk: number;
-    }) => {
+    socket.on('live_feed', (data: any) => {
+      if (!socket.userId) return;
+
+      const audio = data?.audio || {};
+      const motionRaw = data?.motion || {};
+
+      const accelerationRaw = motionRaw?.acceleration ?? motionRaw?.accelerationMagnitude ?? motionRaw?.acceleration_magnitude;
+      const shakeRaw = motionRaw?.shake ?? motionRaw?.jitter ?? motionRaw?.jitterValue;
+
+      const acceleration = Number.isFinite(Number(accelerationRaw)) ? Number(accelerationRaw) : 0;
+      const shake = Number.isFinite(Number(shakeRaw)) ? Number(shakeRaw) : 0;
+
+      const motionScore = calculateMotionIntensity({
+        accelerationMagnitude: acceleration,
+        jitter: shake,
+      });
+
+      logger.debug('live_feed received', {
+        userId: socket.userId,
+        acceleration,
+        shake,
+        motionScore,
+      });
+
       // Only rebroadcast to security room
       io.to('security_room').emit('live_feed', {
         ...data,
+        userId: socket.userId,
+        audio,
+        motion: {
+          ...motionRaw,
+          acceleration,
+          shake,
+          accelerationMagnitude: acceleration,
+          jitter: shake,
+          score: motionScore,
+        },
         timestamp: new Date().toISOString(),
       });
     });
