@@ -18,6 +18,8 @@ export interface ExplanationInputs {
         lat?: number;
         lng?: number;
         zoneName?: string;
+        isNormalZone?: boolean;
+        normal_zone?: boolean;
     };
     time?: Date;
 }

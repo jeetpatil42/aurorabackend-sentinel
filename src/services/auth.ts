@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '../db/supabaseAdmin';
 import { supabase } from '../db/client';
 import { sendOTPEmail } from './email';

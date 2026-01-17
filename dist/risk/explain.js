@@ -42,7 +42,7 @@ function generateExplanation(inputs) {
         const zoneType = location.zoneName.toLowerCase().includes('high') ? 'high-risk' : 'low-risk';
         bullets.push(`Inside ${zoneType} zone: ${location.zoneName}`);
     }
-    else if (location?.isNormalZone) {
+    else if (location?.isNormalZone || location?.normal_zone) {
         bullets.push('User is outside all predefined risk zones (normal area)');
     }
     else if (location?.lat && location?.lng) {

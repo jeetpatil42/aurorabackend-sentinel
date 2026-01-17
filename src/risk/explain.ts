@@ -20,6 +20,8 @@ export interface ExplanationInputs {
     lat?: number;
     lng?: number;
     zoneName?: string;
+    isNormalZone?: boolean;
+    normal_zone?: boolean;
   };
   time?: Date;
 }
@@ -59,7 +61,7 @@ export function generateExplanation(inputs: ExplanationInputs): string[] {
   if (location?.zoneName) {
     const zoneType = location.zoneName.toLowerCase().includes('high') ? 'high-risk' : 'low-risk';
     bullets.push(`Inside ${zoneType} zone: ${location.zoneName}`);
-  } else if (location?.isNormalZone) {
+  } else if (location?.isNormalZone || location?.normal_zone) {
     bullets.push('User is outside all predefined risk zones (normal area)');
   } else if (location?.lat && location?.lng) {
     bullets.push(`Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`);
