@@ -7,6 +7,7 @@ import { isPointInPolygon } from '../utils/geojson';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { getRiskZonesCached } from '../services/riskZonesCache';
+import { v4 as uuidv4 } from 'uuid';
 
 async function resolveUserDisplayByUserId(userId: string): Promise<{ email?: string; name?: string }> {
   const { data: userRow } = await supabaseAdmin
@@ -639,6 +640,59 @@ export const clearHistory = async (req: AuthRequest, res: Response): Promise<voi
     res.json({ message: 'History cleared successfully', deleted: result.deleted });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const uploadSOSAttachments = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const bucket = env.supabaseStorageBucket();
+    if (!bucket) {
+      res.status(500).json({ error: 'Supabase storage bucket not configured' });
+      return;
+    }
+
+    const files = ((req as any).files || []) as any[];
+    if (!Array.isArray(files) || files.length === 0) {
+      res.status(400).json({ error: 'No files uploaded' });
+      return;
+    }
+
+    const uploadedPaths: string[] = [];
+
+    for (const file of files) {
+      const originalname = typeof file?.originalname === 'string' ? file.originalname : '';
+      const ext = originalname.includes('.') ? originalname.split('.').pop() : '';
+      const suffix = ext ? `.${ext}` : '';
+      const path = `sos/${req.user.id}/${uuidv4()}${suffix}`;
+
+      if (!file?.buffer) {
+        res.status(400).json({ error: 'Invalid uploaded file' });
+        return;
+      }
+
+      const { error } = await supabaseAdmin.storage.from(bucket).upload(path, file.buffer, {
+        contentType: file?.mimetype,
+        upsert: false,
+      });
+
+      if (error) {
+        logger.error('Error uploading SOS attachment:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload attachment' });
+        return;
+      }
+
+      uploadedPaths.push(path);
+    }
+
+    res.json({ attachments: uploadedPaths });
+  } catch (error: any) {
+    logger.error('Error in uploadSOSAttachments:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload attachments' });
   }
 };
 
